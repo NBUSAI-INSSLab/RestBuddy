@@ -286,6 +286,7 @@ class MainWindow(QWidget):
         self.overlay = BreakOverlay(self.music, self.conf.get("theme", "light"), self)
         self.overlay.finished.connect(self._on_overlay_finished)
         self.overlay.snooze_requested.connect(self._snooze_break)
+        self.overlay.apply_settings(self.conf)
 
         self.music.set_playlist(self.conf.get("music_files", []))
         self.music.set_volume(int(self.conf.get("music_volume", 60)))
@@ -346,6 +347,7 @@ class MainWindow(QWidget):
     def _on_break_settings(self) -> None:
         self.music.set_playlist(self.conf.get("music_files", []))
         self.music.set_volume(int(self.conf.get("music_volume", 60)))
+        self.overlay.apply_settings(self.conf)
 
     # ==================================================================
     # 任务提醒
@@ -439,6 +441,7 @@ class MainWindow(QWidget):
         self.page_break.start_break_requested.connect(self.do_break_now)
         self.page_break.settings_saved.connect(self._on_break_settings)
         self.page_settings.theme_changed.connect(self.apply_theme)
+        self.page_settings.break_ui_changed.connect(self._on_break_settings)
 
         self.stack.setCurrentWidget(self.pages.get(current_key, self.page_dashboard))
         self.page_dashboard.set_break_count(self._rest_count)

@@ -39,6 +39,12 @@ DEFAULTS: dict[str, Any] = {
     },
     "break_auto_start": False,       # 到点自动进入休息（否则仅提醒）
 
+    # 全屏休息界面
+    "break_carousel": True,          # 休息时显示图片轮播
+    "break_image_dir": "",           # 轮播图片来源目录（留空 = 数据目录下的 slides）
+    "break_slide_sec": 12,           # 每张图片/内容卡停留秒数
+    "break_warn_sec": 15,            # 结束前多少秒进入警示跳动
+
     # 音乐
     "music_files": [],               # 休息音乐文件路径列表
     "music_volume": 60,              # 0-100

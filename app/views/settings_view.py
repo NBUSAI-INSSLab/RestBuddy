@@ -9,14 +9,15 @@ from PySide6.QtCore import QUrl, Qt, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QLabel,
-    QMessageBox, QPushButton, QRadioButton, QScrollArea, QVBoxLayout,
-    QWidget,
+    QMessageBox, QPushButton, QRadioButton, QScrollArea, QSpinBox,
+    QVBoxLayout, QWidget,
 )
 
 from .. import autostart
 from ..config import app_data_dir, app_root_dir
 from ..icons import icon
 from ..theme import SCHEME_LABELS, palette, sample_colors
+from ..widgets.break_overlay import default_slides_dir, scan_images
 from ..widgets.common import Card
 
 PAGE_NAMES = {
@@ -31,6 +32,7 @@ class SettingsView(QWidget):
 
     theme_changed = Signal(str)
     startup_changed = Signal()
+    break_ui_changed = Signal()
 
     def __init__(self, conf, repo, theme: str = "light", parent=None) -> None:
         super().__init__(parent)
@@ -89,6 +91,57 @@ class SettingsView(QWidget):
         self.lb_theme_hint.setWordWrap(True)
         look.add(self.lb_theme_hint)
         root.addWidget(look)
+
+        # ---- 全屏休息界面 ----
+        brk = Card("全屏休息界面", self._theme,
+                   subtitle="休息全屏页展示的内容，以及结束前的警示方式")
+        self.cb_carousel = QCheckBox("休息时显示图片轮播（无图片则展示内置放松内容卡）")
+        brk.add(self.cb_carousel)
+
+        dir_row = QHBoxLayout()
+        dir_row.addWidget(QLabel("图片目录"))
+        self.lb_slides_dir = QLabel("")
+        self.lb_slides_dir.setObjectName("Muted")
+        self.lb_slides_dir.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        btn_open_slides = QPushButton("打开目录")
+        btn_open_slides.clicked.connect(self._open_slides_dir)
+        btn_pick_slides = QPushButton("更换目录")
+        btn_pick_slides.clicked.connect(self._pick_slides_dir)
+        btn_reset_slides = QPushButton("恢复默认")
+        btn_reset_slides.clicked.connect(self._reset_slides_dir)
+        dir_row.addWidget(self.lb_slides_dir, 1)
+        dir_row.addWidget(btn_open_slides)
+        dir_row.addWidget(btn_pick_slides)
+        dir_row.addWidget(btn_reset_slides)
+        brk.add_layout(dir_row)
+
+        self.lb_slides_hint = QLabel("")
+        self.lb_slides_hint.setObjectName("Muted")
+        self.lb_slides_hint.setWordWrap(True)
+        brk.add(self.lb_slides_hint)
+
+        num_row = QHBoxLayout()
+        num_row.addWidget(QLabel("每张停留"))
+        self.sp_slide = QSpinBox()
+        self.sp_slide.setRange(5, 120)
+        self.sp_slide.setSuffix(" 秒")
+        self.sp_slide.setFixedWidth(110)
+        num_row.addWidget(self.sp_slide)
+        num_row.addSpacing(28)
+        num_row.addWidget(QLabel("结束前警示"))
+        self.sp_warn = QSpinBox()
+        self.sp_warn.setRange(5, 120)
+        self.sp_warn.setSuffix(" 秒")
+        self.sp_warn.setFixedWidth(110)
+        num_row.addWidget(self.sp_warn)
+        num_row.addStretch(1)
+        brk.add_layout(num_row)
+
+        self.btn_save_brk = QPushButton("保存休息界面设置")
+        self.btn_save_brk.setObjectName("Primary")
+        self.btn_save_brk.clicked.connect(self._save_break_ui)
+        brk.body.addWidget(self.btn_save_brk, 0, Qt.AlignRight)
+        root.addWidget(brk)
 
         # ---- 启动行为 ----
         start = Card("启动与运行", self._theme,
@@ -185,6 +238,12 @@ class SettingsView(QWidget):
         pidx = self.cb_default_page.findData(self.conf.get("default_page", "dashboard"))
         self.cb_default_page.setCurrentIndex(max(0, pidx))
 
+        # 全屏休息界面
+        self.cb_carousel.setChecked(bool(self.conf.get("break_carousel", True)))
+        self.sp_slide.setValue(int(self.conf.get("break_slide_sec", 12) or 12))
+        self.sp_warn.setValue(int(self.conf.get("break_warn_sec", 15) or 15))
+        self._refresh_slides_hint()
+
     def _update_autostart_hint(self) -> None:
         enabled = autostart.is_enabled()
         self.lb_autostart_hint.setText(
@@ -220,6 +279,62 @@ class SettingsView(QWidget):
         self.conf.save()
         self.startup_changed.emit()
         QMessageBox.information(self, "已保存", "启动设置已更新。")
+
+    # ------------------------------------------------------------------
+    # 全屏休息界面
+    # ------------------------------------------------------------------
+    def _slides_dir(self) -> Path:
+        raw = str(self.conf.get("break_image_dir", "") or "").strip()
+        return Path(raw) if raw else default_slides_dir()
+
+    def _refresh_slides_hint(self) -> None:
+        d = self._slides_dir()
+        self.lb_slides_dir.setText(str(d))
+        n = len(scan_images(d))
+        if n:
+            self.lb_slides_hint.setText(
+                f"已发现 {n} 张图片，休息时会自动轮播（点击轮播区域或按空格键可手动切换）。"
+            )
+        else:
+            self.lb_slides_hint.setText(
+                "该目录下暂无图片。放入 jpg / png / bmp / webp 等图片即可自动轮播；"
+                "没有图片时会展示内置的放松内容卡（护眼法则、深呼吸、颈肩舒展等）。"
+            )
+
+    def _open_slides_dir(self) -> None:
+        d = self._slides_dir()
+        try:
+            d.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(d)))
+
+    def _pick_slides_dir(self) -> None:
+        from PySide6.QtWidgets import QFileDialog
+        path = QFileDialog.getExistingDirectory(self, "选择轮播图片目录",
+                                               str(self._slides_dir()))
+        if not path:
+            return
+        self.conf.set("break_image_dir", path)
+        self.conf.save()
+        self._refresh_slides_hint()
+        self.break_ui_changed.emit()
+
+    def _reset_slides_dir(self) -> None:
+        self.conf.set("break_image_dir", "")
+        self.conf.save()
+        self._refresh_slides_hint()
+        self.break_ui_changed.emit()
+
+    def _save_break_ui(self) -> None:
+        self.conf.update({
+            "break_carousel": self.cb_carousel.isChecked(),
+            "break_slide_sec": self.sp_slide.value(),
+            "break_warn_sec": self.sp_warn.value(),
+        })
+        self.conf.save()
+        self.break_ui_changed.emit()
+        QMessageBox.information(self, "已保存", "休息界面设置已更新，下次进入休息时生效。")
 
     # ------------------------------------------------------------------
     def _export_csv(self) -> None:

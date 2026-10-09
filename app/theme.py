@@ -59,6 +59,8 @@ LIGHT = {
     "ov_primary": "#2fc3a2",
     "ov_primary_hover": "#3ad3b1",
     "ov_primary_text": "#04302a",
+    "ov_warn": "#ffb020",
+    "ov_warn_text": "#3a2400",
 }
 
 # ---- 薄荷绿 · 深色 ---------------------------------------------------
@@ -101,6 +103,8 @@ DARK = {
     "ov_primary": "#2fc3a2",
     "ov_primary_hover": "#3ad3b1",
     "ov_primary_text": "#04302a",
+    "ov_warn": "#ffb020",
+    "ov_warn_text": "#3a2400",
 }
 
 # ---- 橙色 · 暖阳 -----------------------------------------------------
@@ -143,6 +147,8 @@ ORANGE = {
     "ov_primary": "#ff9147",
     "ov_primary_hover": "#ffa96a",
     "ov_primary_text": "#331500",
+    "ov_warn": "#ff7043",
+    "ov_warn_text": "#2b0d00",
 }
 
 # ---- 橙蓝 · 活力（深蓝侧边栏 + 橙色主色） ----------------------------
@@ -185,6 +191,8 @@ ORANGEBLUE = {
     "ov_primary": "#ff9147",
     "ov_primary_hover": "#ffa96a",
     "ov_primary_text": "#331500",
+    "ov_warn": "#ffb020",
+    "ov_warn_text": "#3a2400",
 }
 
 # ---- 黑灰 · 极简 -----------------------------------------------------
@@ -227,6 +235,8 @@ GRAY = {
     "ov_primary": "#e4e8ec",
     "ov_primary_hover": "#f2f5f8",
     "ov_primary_text": "#16181b",
+    "ov_warn": "#ffcc55",
+    "ov_warn_text": "#3a2400",
 }
 
 SCHEMES: dict[str, dict] = {
