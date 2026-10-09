@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 打包产物
+build/
+dist/
+*.egg-info/
+*.spec
+
+# 运行期数据（实际保存在 %APPDATA%/RestBuddy，此处仅防御性忽略）
+*.db
+*.sqlite
+*.sqlite3
+config.json
+error.log
+*.log
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
